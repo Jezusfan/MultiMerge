@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30225.117
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiMerge.2017", "MultiMerge.2017\MultiMerge.2017.csproj", "{51AD2EA0-E551-4233-92B4-C4631BBFEC09}"
 EndProject
@@ -18,29 +18,54 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution items", "solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiMerge.2022", "MultiMerge.2022\MultiMerge.2022.csproj", "{B57D24A3-DADB-4472-BED4-F7E8D60496BE}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		MultiMergeShared\MultiMergeShared.projitems*{3a61db71-de2d-434c-b914-c61daebb3c0e}*SharedItemsImports = 13
 		MultiMergeShared\MultiMergeShared.projitems*{51ad2ea0-e551-4233-92b4-c4631bbfec09}*SharedItemsImports = 4
+		MultiMergeShared\MultiMergeShared.projitems*{b57d24a3-dadb-4472-bed4-f7e8d60496be}*SharedItemsImports = 4
 		MultiMergeShared\MultiMergeShared.projitems*{ccfdea6d-5765-417a-b303-bc63a2efd0a1}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Debug|x86.Build.0 = Debug|Any CPU
 		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Release|x86.ActiveCfg = Release|Any CPU
+		{51AD2EA0-E551-4233-92B4-C4631BBFEC09}.Release|x86.Build.0 = Release|Any CPU
 		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Debug|x86.Build.0 = Debug|Any CPU
 		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Release|x86.ActiveCfg = Release|Any CPU
+		{AA4EC68F-4EEC-4144-9549-B3A76CDA81E6}.Release|x86.Build.0 = Release|Any CPU
 		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Debug|x86.Build.0 = Debug|Any CPU
 		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Release|x86.ActiveCfg = Release|Any CPU
+		{CCFDEA6D-5765-417A-B303-BC63A2EFD0A1}.Release|x86.Build.0 = Release|Any CPU
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Debug|x86.ActiveCfg = Debug|x86
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Debug|x86.Build.0 = Debug|x86
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Release|x86.ActiveCfg = Release|x86
+		{B57D24A3-DADB-4472-BED4-F7E8D60496BE}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
