@@ -590,18 +590,18 @@ namespace MultiMerge
                                 toBranches.Clear();
                                 foreach (var branchpath in branches)
                                 {
-                                    int count = Math.Min(branchpath.Length, pendingEdit.ServerItem.Length);
-                                    int max1 = branchpath.Length - 1;
-                                    int max2 = pendingEdit.ServerItem.Length - 1;
-                                    for (int i = 0; i < count; i++)
+                                    string[] branchTree = branchpath.Split('/');
+                                    string[] serverTree = pendingEdit.ServerItem.Split('/');
+
+                                    int count = Math.Min(branchTree.Length, serverTree.Length);
+                                    for (int i = 1; i < count + 1; i++)
                                     {
-                                        if (branchpath[max1 - i] != pendingEdit.ServerItem[max2 - i])
+                                        if (branchTree[branchTree.Length - i] != serverTree[serverTree.Length - i])
                                         {
-                                            var length = (max1 - i) + 2;
-                                            toBranches.Add(branchpath.Substring(0, length));
+                                            toBranches.Add(String.Join("/", branchTree.Take(branchTree.Length - i + 1)));
                                             if (fromBranch == null)
-                                                fromBranch = pendingEdit.ServerItem.Substring(0, (max2 - i) + 2);
-                                            i = count;
+                                                fromBranch = String.Join("/", serverTree.Take(serverTree.Length - i + 1));
+                                            break;
                                         }
                                     }
                                 }

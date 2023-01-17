@@ -150,8 +150,8 @@ namespace MultiMerge
             catch (Exception exception)
             {
                 var generalPane = GetOutputPane(VSConstants.GUID_OutWindowGeneralPane, "Merge");
-                generalPane.OutputString(exception.ToString());
-                generalPane.OutputString(Environment.NewLine);
+                generalPane.OutputStringThreadSafe(exception.ToString());
+                generalPane.OutputStringThreadSafe(Environment.NewLine);
                 generalPane.Activate(); // Brings this pane into 
             }
 
@@ -198,8 +198,8 @@ namespace MultiMerge
             catch (Exception exception)
             {
                 var generalPane = GetOutputPane(VSConstants.GUID_OutWindowGeneralPane, "Merge");
-                generalPane.OutputString(exception.ToString());
-                generalPane.OutputString(Environment.NewLine);
+                generalPane.OutputStringThreadSafe(exception.ToString());
+                generalPane.OutputStringThreadSafe(Environment.NewLine);
                 generalPane.Activate(); // Brings this pane into 
             }
         }
@@ -208,16 +208,18 @@ namespace MultiMerge
         {
             // Must be connected to a TFS server to do this
             DTE2 automationObject = (DTE2)GetService(typeof(DTE));
-            VersionControlExt versionControlExt = automationObject.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt") as VersionControlExt;
-            var localpath = versionControlExt.Explorer.CurrentFolderItem.LocalPath;
-            if (!string.IsNullOrEmpty(localpath))
+            if (automationObject != null)
             {
-                if (Directory.Exists(localpath))
-                    versionControlExt.SolutionWorkspace.AddIgnoreFileExclusion(null, localpath);
-                else if (File.Exists(localpath))
-                    versionControlExt.SolutionWorkspace.AddIgnoreFileExclusion(localpath, null);
+                VersionControlExt versionControlExt = automationObject.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt") as VersionControlExt;
+                var localpath = versionControlExt.Explorer.CurrentFolderItem.LocalPath;
+                if (!string.IsNullOrEmpty(localpath))
+                {
+                    if (Directory.Exists(localpath))
+                        versionControlExt.SolutionWorkspace.AddIgnoreFileExclusion(null, localpath);
+                    else if (File.Exists(localpath))
+                        versionControlExt.SolutionWorkspace.AddIgnoreFileExclusion(localpath, null);
+                }
             }
-
         }
 
         private class OutputWindowLogger : ILogger
@@ -231,22 +233,22 @@ namespace MultiMerge
             public void Debug(string message)
             {
                 var log = string.Format(@"{0} [{1}] - {2}", DateTime.Now, System.Threading.Thread.CurrentThread.ManagedThreadId, message);
-                _output.OutputString(log);
-                _output.OutputString(Environment.NewLine);
+                _output.OutputStringThreadSafe(log);
+                _output.OutputStringThreadSafe(Environment.NewLine);
             }
 
             public void Debug(string message, params object[] args)
             {
                 var log = string.Format(@"{0} [{1}] - {2}", DateTime.Now, System.Threading.Thread.CurrentThread.ManagedThreadId, string.Format(message, args));
-                _output.OutputString(log);
-                _output.OutputString(Environment.NewLine);
+                _output.OutputStringThreadSafe(log);
+                _output.OutputStringThreadSafe(Environment.NewLine);
             }
 
             public void Error(string message)
             {
                 var log = string.Format(@"{0} [{1}] - {2}", DateTime.Now, System.Threading.Thread.CurrentThread.ManagedThreadId, message);
-                _output.OutputString(log);
-                _output.OutputString(Environment.NewLine);
+                _output.OutputStringThreadSafe(log);
+                _output.OutputStringThreadSafe(Environment.NewLine);
                 _output.Activate();
             }
 
@@ -254,11 +256,11 @@ namespace MultiMerge
             {
                 var now = DateTime.Now;
                 var log = string.Format(@"{0} [{1}] - {2}", now, System.Threading.Thread.CurrentThread.ManagedThreadId, message);
-                _output.OutputString(log);
-                _output.OutputString(Environment.NewLine);
+                _output.OutputStringThreadSafe(log);
+                _output.OutputStringThreadSafe(Environment.NewLine);
                 log = string.Format(@"{0} [{1}] - {2}", now, System.Threading.Thread.CurrentThread.ManagedThreadId, exception);
-                _output.OutputString(log);
-                _output.OutputString(Environment.NewLine);
+                _output.OutputStringThreadSafe(log);
+                _output.OutputStringThreadSafe(Environment.NewLine);
                 _output.Activate();
             }
         }
