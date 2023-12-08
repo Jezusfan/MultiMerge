@@ -164,6 +164,7 @@ namespace MultiMerge
                 ? new DateVersionSpec(this.ToDatePicker.Value)
                 : null;
             searchCriteria.SearchComment = this.ContainingCommentText.Text;
+            searchCriteria.SearchWorkItem = this.RelatedWorkItemText.Text;
             searchCriteria.UseRegex = this.useRegularExpressions.Checked;
             searchCriteria.KeepPreviousChangeSets = this.chkKeepChangesets.Checked;
             searchCriteria.IncludeRelevantChangeSets = this.chkIncludeRelevantChangesets.Checked;
@@ -383,6 +384,10 @@ namespace MultiMerge
                     Int32.MaxValue,
                     true,
                     false);
+
+                int workItemId = default;
+                int.TryParse(sc.SearchWorkItem, out workItemId);
+
                 foreach (Changeset changeset in changesets)
                 {
                     if (bw.CancellationPending)
@@ -390,12 +395,37 @@ namespace MultiMerge
                         break;
                     }
 
-                    if (string.IsNullOrWhiteSpace(sc.SearchComment) ||
-                        (!sc.UseRegex && changeset.Comment.IndexOf(sc.SearchComment.Trim(), StringComparison.CurrentCultureIgnoreCase) != -1) ||
-                        (sc.UseRegex && Regex.IsMatch(changeset.Comment, sc.SearchComment)))
+                    bool analyze = true;
+
+                    if (!string.IsNullOrWhiteSpace(sc.SearchComment))
+                    {
+                        if (sc.UseRegex)
+                        {
+                            if (!Regex.IsMatch(changeset.Comment, sc.SearchComment))
+                                analyze = false;
+                        }
+                        else
+                        {
+                            if (changeset.Comment.IndexOf(sc.SearchComment.Trim(), StringComparison.CurrentCultureIgnoreCase) == -1)
+                                analyze = false;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(sc.SearchWorkItem))
+                    {
+                        if (changeset.WorkItems != null)
+                        {
+                            if (!changeset.WorkItems.Any(_ => _.Id == workItemId))
+                                analyze = false;
+                        }
+                    }
+
+
+                    if (analyze)
                     {
                         processor.AnalyseChangeSet(changeset);
                     }
+
                 }
 
                 processor.DetectMissingChangeSets(sc.IncludeRelevantChangeSets);
@@ -535,6 +565,16 @@ namespace MultiMerge
         {
             CancelFindButton_Click(this, null);
             this.Close();
+        }
+
+        private void RelatedWorkItemText_Validate(object sender, CancelEventArgs e)
+        {
+            e.Cancel = !string.IsNullOrWhiteSpace(this.RelatedWorkItemText.Text) && !int.TryParse(this.RelatedWorkItemText.Text, out int i);
+            if (e.Cancel)
+            {
+                MessageBox.Show("only numeric workitem", MessageBoxButtons.OK);
+            }
+
         }
 
         /// <summary>
