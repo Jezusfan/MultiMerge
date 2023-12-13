@@ -18,7 +18,7 @@ namespace FindChangeByComment.Test
 
             try
             {
-                var teamProjectCollection = new TfsTeamProjectCollection(new Uri("http://tfs:8080/tfs"));
+                var teamProjectCollection = new TfsTeamProjectCollection(new Uri("http://dentw-devops-p"));
                 teamProjectCollection.Authenticate();
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
