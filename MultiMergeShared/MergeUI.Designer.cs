@@ -385,6 +385,7 @@ namespace MultiMerge
             this.ResultsList.View = System.Windows.Forms.View.Details;
             this.ResultsList.DoubleClick += new System.EventHandler(this.ResultsList_DoubleClick);
             this.ResultsList.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ResultsList_KeyUp);
+            this.ResultsList.MultiSelect = false;
             // 
             // ChangesetColumn
             // 

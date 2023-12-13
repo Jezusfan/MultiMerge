@@ -591,7 +591,7 @@ namespace MultiMerge
 
             int changesetId;
             if (int.TryParse(this.ResultsList.SelectedItems[0].Text, out changesetId))
-                this.versionControlExt.ViewChangesetDetails(changesetId);
+                this.versionControlExt?.ViewChangesetDetails(changesetId);
 
         }
         
