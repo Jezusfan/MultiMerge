@@ -52,6 +52,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)app.config" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\Images_32bit.bmp" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\Notification_Teal_16.png" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\OK_16.png" />
