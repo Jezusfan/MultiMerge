@@ -534,7 +534,8 @@ namespace MultiMerge
                     MergeToLatest = chkMergeAllChanges.Checked,
                     MergeIntersectingFiles = chkMergeIntersectingFiles.Checked
                 };
-                if (OptionsGroupBox.Visible)
+
+                if (FilesList?.Items != null)
                 {
                     config.ExcludedFiles.AddRange(GetUnCheckedItems(FilesList.Items));
                 }
