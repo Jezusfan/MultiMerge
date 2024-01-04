@@ -213,7 +213,7 @@ namespace MultiMerge
             bool mergeCompleteFileHistory = config.MergeToLatest;
             int mergeConflicts = _workspace.QueryConflicts(new string[] { targetBranch }, true).Length;
             string source = basePath;
-            var expectedMergedFileNames = new HashSet<string>(_files.Keys.Select(f => f.Replace(source, targetBranch)));
+            var expectedMergedFileNames = new HashSet<string>(GetFilesToMerge(config.ExcludedFiles).Select(f => f.Key.Replace(source, targetBranch)));
             var pendingChanges = new HashSet<string>(_workspace.GetPendingChanges(targetBranch, RecursionType.Full, false).Select(p => p.ServerItem));
             var conflictPending = pendingChanges.Where(p => expectedMergedFileNames.Any(e => e.EndsWith(p.Replace("$", "")))).Select(s => $"- {s}").ToList();
             var errors = new List<string>();
@@ -223,7 +223,7 @@ namespace MultiMerge
             {
                 //special case...we let VS do the changeset merge by itself...
                 //since we do want to provide cancellation functionality, we wrap it in a separate process
-                if (_changes.Count == 1)
+                if (_changes.Count == 1 && config.ExcludedFiles.Count == 0)
                 {
                     var waitHandle = new ManualResetEvent(false);
                     Thread t = new Thread(() =>
@@ -259,7 +259,7 @@ namespace MultiMerge
                 }
                 else
                 {
-                    var allMerges = GetMergeItems(basePath, targetBranch, ref config.CancelAnalysis);
+                    var allMerges = GetMergeItems(basePath, targetBranch, config.ExcludedFiles, ref config.CancelAnalysis);
                     var folderMerges = allMerges.Where(m => m.IsFolder).OrderBy(m => m.SourcePath).ToList();
                     var fileMerges = allMerges.Where(m => !m.IsFolder);
                     var finalFileMerge = new List<MergeItem>();
@@ -427,7 +427,18 @@ namespace MultiMerge
             return status;
         }
 
-        private List<MergeItem> GetMergeItems(string basePath, string targetBranch, ref bool cancel)
+        IEnumerable<KeyValuePair<string, HashSet<Changeset>>> GetFilesToMerge(IEnumerable<string> excludedFiles)
+        {
+            foreach(var file in _files)
+            {
+                if (!excludedFiles.Any(e => string.Compare(file.Key, e, true) == 0))
+                {
+                    yield return file;
+                }
+            }
+        }
+
+        private List<MergeItem> GetMergeItems(string basePath, string targetBranch, IEnumerable<string> excludedFiles, ref bool cancel)
         {
             var allMerges = new List<MergeItem>();
             //we start at 30%
@@ -435,7 +446,7 @@ namespace MultiMerge
             double maximum = _files.Count;
             string progress = "Analyzing file merge: ({0} of {1})";
             MergeProgressChanged?.Invoke(0, string.Format(progress, 0, maximum));
-            foreach (var pair in _files)
+            foreach (var pair in GetFilesToMerge(excludedFiles))
             {
                 string from, to;
                 bool isFolder;

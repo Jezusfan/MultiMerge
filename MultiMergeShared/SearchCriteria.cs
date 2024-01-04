@@ -54,6 +54,15 @@ namespace MultiMerge
         }
 
         /// <summary>
+        /// Gets or sets the workitem that we're searching for
+        /// </summary>
+        public string SearchWorkItem
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether we are using regular expressions
         /// </summary>
         public bool UseRegex

@@ -35,6 +35,8 @@ namespace MultiMerge
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.ContainingCommentText = new System.Windows.Forms.TextBox();
             this.ContainingCommentLabel = new System.Windows.Forms.Label();
+            this.RelatedWorkItemText = new System.Windows.Forms.TextBox();
+            this.RelatedWorkItemLabel = new System.Windows.Forms.Label();
             this.CloseButton = new System.Windows.Forms.Button();
             this.ByUserText = new System.Windows.Forms.TextBox();
             this.ByUserLabel = new System.Windows.Forms.Label();
@@ -83,23 +85,40 @@ namespace MultiMerge
             // 
             // ContainingCommentText
             // 
-            this.tableLayoutPanel1.SetColumnSpan(this.ContainingCommentText, 2);
             this.ContainingCommentText.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ContainingCommentText.Location = new System.Drawing.Point(3, 123);
             this.ContainingCommentText.Name = "ContainingCommentText";
-            this.ContainingCommentText.Size = new System.Drawing.Size(895, 20);
+            this.ContainingCommentText.Size = new System.Drawing.Size(445, 20);
             this.ContainingCommentText.TabIndex = 9;
             // 
             // ContainingCommentLabel
             // 
-            this.tableLayoutPanel1.SetColumnSpan(this.ContainingCommentLabel, 2);
             this.ContainingCommentLabel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ContainingCommentLabel.Location = new System.Drawing.Point(3, 96);
             this.ContainingCommentLabel.Name = "ContainingCommentLabel";
-            this.ContainingCommentLabel.Size = new System.Drawing.Size(895, 24);
+            this.ContainingCommentLabel.Size = new System.Drawing.Size(445, 24);
             this.ContainingCommentLabel.TabIndex = 8;
             this.ContainingCommentLabel.Text = "Containing comment:";
             this.ContainingCommentLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // RelatedWorkItemText
+            // 
+            this.RelatedWorkItemText.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.RelatedWorkItemText.Location = new System.Drawing.Point(3, 123);
+            this.RelatedWorkItemText.Name = "RelatedWorkItemText";
+            this.RelatedWorkItemText.Size = new System.Drawing.Size(445, 20);
+            this.RelatedWorkItemText.TabIndex = 11;
+            this.RelatedWorkItemText.Validating += new System.ComponentModel.CancelEventHandler(this.RelatedWorkItemText_Validate);
+            // 
+            // RelatedWorkItemLabel
+            // 
+            this.RelatedWorkItemLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.RelatedWorkItemLabel.Location = new System.Drawing.Point(3, 96);
+            this.RelatedWorkItemLabel.Name = "RelatedWorkItemLabel";
+            this.RelatedWorkItemLabel.Size = new System.Drawing.Size(445, 24);
+            this.RelatedWorkItemLabel.TabIndex = 10;
+            this.RelatedWorkItemLabel.Text = "Related workitem:";
+            this.RelatedWorkItemLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // CloseButton
             // 
@@ -154,10 +173,12 @@ namespace MultiMerge
             this.tableLayoutPanel1.Controls.Add(this.ToDatePicker, 1, 3);
             this.tableLayoutPanel1.Controls.Add(this.ToDateLabel, 1, 2);
             this.tableLayoutPanel1.Controls.Add(this.FromDateLabel, 0, 2);
+            this.tableLayoutPanel1.Controls.Add(this.ContainingCommentLabel, 0, 4);
             this.tableLayoutPanel1.Controls.Add(this.ContainingCommentText, 0, 5);
+            this.tableLayoutPanel1.Controls.Add(this.RelatedWorkItemLabel, 1, 4);
+            this.tableLayoutPanel1.Controls.Add(this.RelatedWorkItemText, 1, 5);
             this.tableLayoutPanel1.Controls.Add(this.lblPath, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.ByUserLabel, 1, 0);
-            this.tableLayoutPanel1.Controls.Add(this.ContainingCommentLabel, 0, 4);
             this.tableLayoutPanel1.Controls.Add(this.txtBasePath, 0, 1);
             this.tableLayoutPanel1.Controls.Add(this.ByUserText, 1, 1);
             this.tableLayoutPanel1.Controls.Add(this.FromDatePicker, 0, 3);
@@ -170,7 +191,7 @@ namespace MultiMerge
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 16F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 20F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(901, 176);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
@@ -364,6 +385,7 @@ namespace MultiMerge
             this.ResultsList.View = System.Windows.Forms.View.Details;
             this.ResultsList.DoubleClick += new System.EventHandler(this.ResultsList_DoubleClick);
             this.ResultsList.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ResultsList_KeyUp);
+            this.ResultsList.MultiSelect = false;
             // 
             // ChangesetColumn
             // 
@@ -527,6 +549,8 @@ namespace MultiMerge
 
         protected System.Windows.Forms.TextBox ContainingCommentText;
         protected System.Windows.Forms.Label ContainingCommentLabel;
+        protected System.Windows.Forms.TextBox RelatedWorkItemText;
+        protected System.Windows.Forms.Label RelatedWorkItemLabel;
         protected System.Windows.Forms.Button CloseButton;
         protected System.Windows.Forms.TextBox ByUserText;
         protected System.Windows.Forms.Label ByUserLabel;
