@@ -8,9 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("MultiMerge.2022")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Chipsoft")]
 [assembly: AssemblyProduct("MultiMerge.2022")]
-[assembly: AssemblyCopyright("Copyright © Chipsoft 2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
