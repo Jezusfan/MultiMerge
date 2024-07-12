@@ -182,6 +182,26 @@ namespace MultiMerge
             return AskUserForTargetBranch(_versionControlServer, paths, out baselessMerge);
         }
 
+        private static Workspace AskUserForWorkspace(List<Workspace> workspaces)
+        {
+            string targetWorkspaceName = null;
+            List<string> workspaceNames = workspaces.Select(x => x.Name).ToList();
+            if (InputDialog.Show("Please enter target workspace", "Choose target workspace", workspaceNames, ref targetWorkspaceName) == DialogResult.OK)
+            {
+                if (!workspaceNames.Contains(targetWorkspaceName))
+                {
+                    MessageBox.Show($"{targetWorkspaceName} is not a valid TFS workspace", "Multi Merge", MessageBoxIcon.Exclamation);
+                    targetWorkspaceName = string.Empty;
+                }
+            }
+            else
+            {
+                targetWorkspaceName = string.Empty;
+            }
+
+            return workspaces.FirstOrDefault(x => x.Name == (targetWorkspaceName ?? string.Empty));
+        }
+
         private static string AskUserForTargetBranch(VersionControlServer vcs, List<string> paths, out bool baselessMerge)
         {
             string targetBranch = null;
@@ -357,7 +377,7 @@ namespace MultiMerge
                         }
                     }
                 }
-                
+
 
                 _logger.Debug("Linking WorkItems");
                 worker.ReportProgress(99, new Action(() => AddWorkItems(_changes.SelectMany(c => c.AssociatedWorkItems).Select(w => w.Id).Distinct().ToList())));
@@ -580,47 +600,51 @@ namespace MultiMerge
             var pendingEdits = changes.Where(p => p.IsEdit && !p.IsAdd && !p.IsDelete);
             if (pendingEdits.Any())
             {
-                foreach (var workspace in vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName()))
-                {
-                    foreach (var pendingEdit in pendingEdits)
-                    {
-                        var localItem = workspace.GetLocalItemForServerItem(pendingEdit.ServerItem);
-                        if (!string.IsNullOrEmpty(localItem))
-                        {
-                            var branches = new List<string>();
-                            foreach (ItemIdentifier mergeItem in vcs.QueryMergeRelationships(pendingEdit.ServerItem))
-                            {
-                                if (!mergeItem.IsDeleted && !string.IsNullOrWhiteSpace(mergeItem.Item))
-                                {
-                                    branches.Add(mergeItem.Item);
-                                }
-                            }
-                            if (branches.Any())
-                            {
-                                fromBranch = null;
-                                toBranches.Clear();
-                                foreach (var branchpath in branches)
-                                {
-                                    string[] branchTree = branchpath.Split('/');
-                                    string[] serverTree = pendingEdit.ServerItem.Split('/');
+                List<Workspace> workspaces = new List<Workspace>();
+                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName().Substring(0, 15)));
+                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName()));
 
-                                    int count = Math.Min(branchTree.Length, serverTree.Length);
-                                    for (int i = 1; i < count + 1; i++)
+                var targetWorkspace = AskUserForWorkspace(workspaces.ToList());
+                if (targetWorkspace == null) { return targetWorkspace; }
+
+                foreach (var pendingEdit in pendingEdits)
+                {
+                    var localItem = targetWorkspace.GetLocalItemForServerItem(pendingEdit.ServerItem);
+                    if (!string.IsNullOrEmpty(localItem))
+                    {
+                        var branches = new List<string>();
+                        foreach (ItemIdentifier mergeItem in vcs.QueryMergeRelationships(pendingEdit.ServerItem))
+                        {
+                            if (!mergeItem.IsDeleted && !string.IsNullOrWhiteSpace(mergeItem.Item))
+                            {
+                                branches.Add(mergeItem.Item);
+                            }
+                        }
+                        if (branches.Any())
+                        {
+                            fromBranch = null;
+                            toBranches.Clear();
+                            foreach (var branchpath in branches)
+                            {
+                                string[] branchTree = branchpath.Split('/');
+                                string[] serverTree = pendingEdit.ServerItem.Split('/');
+
+                                int count = Math.Min(branchTree.Length, serverTree.Length);
+                                for (int i = 1; i < count + 1; i++)
+                                {
+                                    if (branchTree[branchTree.Length - i] != serverTree[serverTree.Length - i])
                                     {
-                                        if (branchTree[branchTree.Length - i] != serverTree[serverTree.Length - i])
-                                        {
-                                            toBranches.Add(String.Join("/", branchTree.Take(branchTree.Length - i + 1)));
-                                            if (fromBranch == null)
-                                                fromBranch = String.Join("/", serverTree.Take(serverTree.Length - i + 1));
-                                            break;
-                                        }
+                                        toBranches.Add(String.Join("/", branchTree.Take(branchTree.Length - i + 1)));
+                                        if (fromBranch == null)
+                                            fromBranch = String.Join("/", serverTree.Take(serverTree.Length - i + 1));
+                                        break;
                                     }
                                 }
-                                if (toBranches.Any())
-                                {
-                                    toBranches.Add(fromBranch);
-                                    return workspace;
-                                }
+                            }
+                            if (toBranches.Any())
+                            {
+                                toBranches.Add(fromBranch);
+                                return targetWorkspace;
                             }
                         }
                     }
