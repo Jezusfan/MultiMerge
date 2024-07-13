@@ -14,6 +14,7 @@ using Microsoft.TeamFoundation.Controls;
 using Microsoft.TeamFoundation.Controls.WPF.TeamExplorer;
 using Microsoft.TeamFoundation.VersionControl.Client;
 using Microsoft.TeamFoundation.VersionControl.Common;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Shell.Interop;
 using MultiMergeShared;
 
@@ -572,7 +573,7 @@ namespace MultiMerge
             var pending = changes.SelectMany(c => c.PendingChanges);
             string fromBranch;
             List<string> targetBranches;
-            Workspace workspace = GetWorkSpace(vcs, pending, out fromBranch, out targetBranches);
+            Workspace workspace = GetWorkSpace(vcs, pending, logger, out fromBranch, out targetBranches);
             if (workspace == null)
                 throw new Exception("Could not determine workspace!");
             logger.Debug($"Found source branch: {fromBranch}");
@@ -593,23 +594,48 @@ namespace MultiMerge
             return null;
         }
 
-        private static Workspace GetWorkSpace(VersionControlServer vcs, IEnumerable<PendingChange> changes, out string fromBranch, out List<string> toBranches)
+        private static Workspace GetWorkSpace(VersionControlServer vcs, IEnumerable<PendingChange> changes, ILogger logger, out string fromBranch, out List<string> toBranches)
         {
-            fromBranch = null;
-            toBranches = new List<string>();
-            var pendingEdits = changes.Where(p => p.IsEdit && !p.IsAdd && !p.IsDelete);
+            IEnumerable<PendingChange> pendingEdits = changes.Where(p => p.IsEdit && !p.IsAdd && !p.IsDelete);
             if (pendingEdits.Any())
             {
                 List<Workspace> workspaces = new List<Workspace>();
                 workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName().Substring(0, 15)));
                 workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName()));
 
+                var workspace = GetBranches(vcs, workspaces, pendingEdits, logger, out fromBranch, out toBranches);
+                if (workspace != null) { return workspace; }
+
                 var targetWorkspace = AskUserForWorkspace(workspaces.ToList());
                 if (targetWorkspace == null) { return targetWorkspace; }
 
+                return GetBranches(vcs, workspaces, pendingEdits, logger, out fromBranch, out toBranches);
+            }
+
+            fromBranch = null;
+            toBranches = new List<string>();
+            return null;
+        }
+
+        private static Workspace GetBranches(VersionControlServer vcs, List<Workspace> workspaces, IEnumerable<PendingChange> pendingEdits, ILogger logger, out string fromBranch, out List<string> toBranches)
+        {
+            fromBranch = null;
+            toBranches = new List<string>();
+            foreach (var workspace in workspaces)
+            {
                 foreach (var pendingEdit in pendingEdits)
                 {
-                    var localItem = targetWorkspace.GetLocalItemForServerItem(pendingEdit.ServerItem);
+                    string localItem = null;
+                    try
+                    {
+                        localItem = workspace.GetLocalItemForServerItem(pendingEdit.ServerItem);
+                    }
+                    catch (ItemNotMappedException itemNotMappedException)
+                    {
+                        logger.Debug("Get local item for server item exception: " + itemNotMappedException.Message);
+                        continue;
+                    }
+
                     if (!string.IsNullOrEmpty(localItem))
                     {
                         var branches = new List<string>();
@@ -634,9 +660,9 @@ namespace MultiMerge
                                 {
                                     if (branchTree[branchTree.Length - i] != serverTree[serverTree.Length - i])
                                     {
-                                        toBranches.Add(String.Join("/", branchTree.Take(branchTree.Length - i + 1)));
+                                        toBranches.Add(string.Join("/", branchTree.Take(branchTree.Length - i + 1)));
                                         if (fromBranch == null)
-                                            fromBranch = String.Join("/", serverTree.Take(serverTree.Length - i + 1));
+                                            fromBranch = string.Join("/", serverTree.Take(serverTree.Length - i + 1));
                                         break;
                                     }
                                 }
@@ -644,7 +670,7 @@ namespace MultiMerge
                             if (toBranches.Any())
                             {
                                 toBranches.Add(fromBranch);
-                                return targetWorkspace;
+                                return workspace;
                             }
                         }
                     }
