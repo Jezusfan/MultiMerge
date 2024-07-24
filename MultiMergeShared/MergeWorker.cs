@@ -600,8 +600,12 @@ namespace MultiMerge
             if (pendingEdits.Any())
             {
                 List<Workspace> workspaces = new List<Workspace>();
-                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName().Substring(0, 15)));
-                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, System.Net.Dns.GetHostName()));
+                string hostname = System.Net.Dns.GetHostName();
+                if (hostname.Length > 15)
+                {
+                    workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname.Substring(0, 15)));
+                }
+                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname));
 
                 var workspace = GetBranches(vcs, workspaces, pendingEdits, logger, out fromBranch, out toBranches);
                 if (workspace != null) { return workspace; }
