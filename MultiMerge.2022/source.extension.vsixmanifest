@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="MultiMerg.2022.Wouter Wigman.69d15db0-2405-4f7e-a4d9-68193fc90415" Version="1.1.15.0" Language="en-US" Publisher="Jesusfan" />
+        <Identity Id="MultiMerg.2022.Wouter Wigman.69d15db0-2405-4f7e-a4d9-68193fc90415" Version="1.1.17.0" Language="en-US" Publisher="Jesusfan" />
         <DisplayName>MultiMerge.2022</DisplayName>
         <Description xml:space="preserve">Improves TFS merge experience by allowing merge of cherry picked changesets, easy baseless merges and power search &amp; merge changesets functionality</Description>
         <GettingStartedGuide>https://marketplace.visualstudio.com/items?itemName=Jesusfan.MultiMerge2019</GettingStartedGuide>
