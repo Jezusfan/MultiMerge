@@ -65,7 +65,7 @@ namespace MultiMerge
         /// </summary>
         protected override async System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            base.Initialize();
+            await base.InitializeAsync(cancellationToken, progress);
             // Switches to the UI thread in order to consume some services used in command initialization
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
@@ -100,13 +100,34 @@ namespace MultiMerge
         /// </summary>
         private void MergeByComment(object sender, EventArgs e)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var teamExplorer = GetService(typeof(ITeamExplorer)) as ITeamExplorer;
             // Must be connected to a TFS server to do this
             DTE2 automationObject = (DTE2)GetService(typeof(DTE));
             var versionControl = automationObject.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt") as VersionControlExt;
+            if (versionControl == null)
+            {
+                System.Windows.Forms.MessageBox.Show(
+                    "Team Foundation version control is not available in this Visual Studio session. Open a solution under TFVC and ensure the Azure DevOps / TFVC workload is installed.",
+                    "MultiMerge",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Warning);
+                return;
+            }
             var logger = new OutputWindowLogger(this);
-            frmMerge findForm = new frmMerge(versionControl, teamExplorer, logger);
-            findForm.Show();
+            try
+            {
+                var findForm = new frmMerge(versionControl, teamExplorer, logger, automationObject);
+                findForm.Show();
+            }
+            catch (InvalidOperationException ex)
+            {
+                System.Windows.Forms.MessageBox.Show(
+                    ex.Message,
+                    "MultiMerge",
+                    System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Warning);
+            }
         }
 
         /// <summary>
@@ -116,7 +137,7 @@ namespace MultiMerge
         /// </summary>
         private void MergeFromHistoryWindow(object sender, EventArgs e)
         {
-
+            ThreadHelper.ThrowIfNotOnUIThread();
             // Must be connected to a TFS server to do this
             DTE2 automationObject = (DTE2)GetService(typeof(DTE));
 
@@ -125,6 +146,8 @@ namespace MultiMerge
                 var logger = new OutputWindowLogger(this);
 
                 VersionControlExt versionControlExt = automationObject.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt") as VersionControlExt;
+                if (versionControlExt == null)
+                    return;
                 //get History window
                 var window = versionControlExt?.History?.ActiveWindow;
                 if (window != null)
@@ -159,6 +182,7 @@ namespace MultiMerge
 
         private void UnShelveToBranch(object sender, EventArgs e)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
                 var logger = new OutputWindowLogger(this);
@@ -211,6 +235,8 @@ namespace MultiMerge
             if (automationObject != null)
             {
                 VersionControlExt versionControlExt = automationObject.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt") as VersionControlExt;
+                if (versionControlExt?.Explorer?.CurrentFolderItem == null)
+                    return;
                 var localpath = versionControlExt.Explorer.CurrentFolderItem.LocalPath;
                 if (!string.IsNullOrEmpty(localpath))
                 {

@@ -2,12 +2,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.TeamFoundation.Controls;
 using Microsoft.TeamFoundation.VersionControl.Client;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TeamFoundation.VersionControl;
 using MultiMergeShared;
@@ -92,23 +97,69 @@ namespace MultiMerge
         /// <summary>
         /// Initializes a new instance of the <see cref="MergeUI"/> class, via Source Control Explorer.
         /// </summary>
-        public MergeUI(VersionControlExt versionControl, ITeamExplorer teamExplorer, ILogger logger) : this(logger)
+        public MergeUI(VersionControlExt versionControl, ITeamExplorer teamExplorer, ILogger logger, DTE2 solutionDte = null) : this(logger)
         {
-            this._teamExplorer = teamExplorer;
-            this.versionControlExt = versionControl;
-            this._versionControlServer = this.versionControlExt.Explorer.Workspace.VersionControlServer;
-            _workspace = this.versionControlExt.Explorer.Workspace;
-            this.txtBasePath.Text = this.versionControlExt.Explorer.CurrentFolderItem.SourceServerPath;
-            this.FromDatePicker.Value = DateTime.Now - new TimeSpan(28, 0, 0, 0);
-            this.ToDatePicker.Value = DateTime.Now;
+            ThreadHelper.ThrowIfNotOnUIThread();
+            _teamExplorer = teamExplorer;
+            versionControlExt = versionControl ?? throw new InvalidOperationException(
+                "Team Foundation version control is not available in this Visual Studio session.");
+
+            _workspace = TryGetWorkspace(versionControlExt);
+            if (_workspace == null)
+                throw new InvalidOperationException("No TFVC workspace is available for the current solution or selection.");
+
+            _versionControlServer = _workspace.VersionControlServer;
+            if (_versionControlServer == null)
+                throw new InvalidOperationException("The version control server is not available.");
+
+            var basePath = TryResolveInitialServerPath(versionControlExt, solutionDte);
+            if (string.IsNullOrWhiteSpace(basePath))
+                throw new InvalidOperationException("Could not resolve a TFVC server path from Source Control Explorer or the open solution.");
+
+            txtBasePath.Text = basePath;
+            FromDatePicker.Value = DateTime.Now - new TimeSpan(28, 0, 0, 0);
+            ToDatePicker.Value = DateTime.Now;
             lblStatus.Text = string.Empty;
+        }
+
+        private static Workspace TryGetWorkspace(VersionControlExt versionControl)
+        {
+            if (versionControl?.Explorer?.Workspace != null)
+                return versionControl.Explorer.Workspace;
+            // SolutionWorkspace is often COM / object-typed; keep everything on object so we never bind dynamic.GetValue.
+            object swObj = versionControl?.SolutionWorkspace;
+            if (swObj == null) return null;
+            var prop = swObj.GetType().GetProperty("Workspace", BindingFlags.Instance | BindingFlags.Public);
+            return prop?.GetValue(swObj, null) as Workspace;
+        }
+
+        private string TryResolveInitialServerPath(VersionControlExt vc, DTE2 dte)
+        {
+            var folder = vc.Explorer?.CurrentFolderItem;
+            if (!string.IsNullOrWhiteSpace(folder?.SourceServerPath))
+                return folder.SourceServerPath.Trim();
+
+            if (dte?.Solution != null && !string.IsNullOrEmpty(dte.Solution.FullName))
+            {
+                try
+                {
+                    var solDir = Path.GetDirectoryName(dte.Solution.FullName);
+                    if (!string.IsNullOrEmpty(solDir) && Directory.Exists(solDir) && _workspace != null)
+                        return _workspace.GetServerItemForLocalItem(solDir);
+                }
+                catch
+                {
+                    // continue to return null
+                }
+            }
+            return null;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MergeUI"/> class, via History
         /// </summary>
         public MergeUI(VersionControlExt versionControl, ITeamExplorer teamExplorer, ILogger logger,
-            string path, List<int> changeSetids) : this(versionControl, teamExplorer, logger)
+            string path, List<int> changeSetids) : this(versionControl, teamExplorer, logger, null)
         {
             txtBasePath.Text = path;
             OptionsGroupBox.Visible = false;

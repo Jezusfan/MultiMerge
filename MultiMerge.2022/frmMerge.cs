@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using EnvDTE80;
 using Microsoft.TeamFoundation.Controls;
 using Microsoft.VisualStudio.TeamFoundation.VersionControl;
 
@@ -19,7 +20,7 @@ namespace MultiMerge
             
         }
 
-        public frmMerge(VersionControlExt versionControl, ITeamExplorer teamExplorer, ILogger logger) : base(versionControl, teamExplorer, logger)
+        public frmMerge(VersionControlExt versionControl, ITeamExplorer teamExplorer, ILogger logger, DTE2 dte = null) : base(versionControl, teamExplorer, logger, dte)
         {}
 
         public frmMerge(VersionControlExt versionControl, ITeamExplorer teamExplorer, ILogger logger,
