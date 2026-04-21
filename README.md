@@ -1,6 +1,11 @@
 # MultiMerge
 Visual Studio Extension for merging individual changeset between branches
 
+## How to use the plugin
+
+Please check for detailed instructions:
+https://marketplace.visualstudio.com/items?itemName=Jesusfan.MultiMerge2017
+
 ## History
 I started developing this as a Visual Studio 2017 extension. I later added the option to publish a Visual Studio 2019 version of the plugin. The main bulk of development is done using VS2017. The test project to start the plugin without Visual Studio, is therefore also targeting Visual 2017-versioned dlls.
 
