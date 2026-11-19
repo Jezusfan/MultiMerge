@@ -573,7 +573,8 @@ namespace MultiMerge
             var pending = changes.SelectMany(c => c.PendingChanges);
             string fromBranch;
             List<string> targetBranches;
-            Workspace workspace = GetWorkSpace(vcs, pending, logger, out fromBranch, out targetBranches);
+            List<Workspace> workspaces = GetLocalWorkspaces(vcs);
+            Workspace workspace = GetWorkSpace(vcs, workspaces, pending, logger, out fromBranch, out targetBranches);
             if (workspace == null)
                 throw new Exception("Could not determine workspace!");
             logger.Debug($"Found source branch: {fromBranch}");
@@ -583,11 +584,13 @@ namespace MultiMerge
                 logger.Debug($"Detected item with different path from source branch: {otherBranches.First().ServerItem}");
                 throw new Exception("Shelveset contains items from multiple branches. This is not supported!");
             }
-            targetBranches.AddRange(GetMappedBranches(vcs, fromBranch).Where(b => !targetBranches.Contains(b, StringComparer.OrdinalIgnoreCase)));
+            targetBranches.AddRange(GetMappedBranches(vcs, workspaces, pending.First().ServerItem, logger).Where(b => !targetBranches.Contains(b, StringComparer.OrdinalIgnoreCase)));
             var targetBranch = AskUserForTargetBranch(vcs, targetBranches, out var baseless);
             if (!string.IsNullOrEmpty(targetBranch))
             {
-                workspace = GetTargetWorkspace(vcs, targetBranch, preferredWorkspaceName, logger);
+                var migrationRule = new MigrationRule(fromBranch, targetBranch);
+                var targetItems = pending.Select(p => migrationRule.MapToTarget(p.ServerItem)).ToList();
+                workspace = GetTargetWorkspace(workspaces, targetBranch, targetItems, preferredWorkspaceName, logger);
                 if (workspace == null)
                 {
                     logger.Debug("Cancel unshelve: user did not choose a target workspace");
@@ -595,19 +598,17 @@ namespace MultiMerge
                 }
                 var queue = new UpdateLocalVersionQueue(workspace);
                 var shelveMerger = new ShelvesetWorker();
-                return shelveMerger.UnshelveMerge(shelveset.Name, shelveset.OwnerName, pending.ToArray(), new MigrationRule(fromBranch, targetBranch), workspace, logger, queue);
+                return shelveMerger.UnshelveMerge(shelveset.Name, shelveset.OwnerName, pending.ToArray(), migrationRule, workspace, logger, queue);
             }
             logger.Debug("Cancel unshelve: user did not choose a target path");
             return null;
         }
 
-        private static Workspace GetWorkSpace(VersionControlServer vcs, IEnumerable<PendingChange> changes, ILogger logger, out string fromBranch, out List<string> toBranches)
+        private static Workspace GetWorkSpace(VersionControlServer vcs, List<Workspace> workspaces, IEnumerable<PendingChange> changes, ILogger logger, out string fromBranch, out List<string> toBranches)
         {
             IEnumerable<PendingChange> pendingEdits = changes.Where(p => p.IsEdit && !p.IsAdd && !p.IsDelete);
             if (pendingEdits.Any())
             {
-                List<Workspace> workspaces = GetLocalWorkspaces(vcs);
-
                 var workspace = GetBranches(vcs, workspaces, pendingEdits, logger, out fromBranch, out toBranches);
                 if (workspace != null) { return workspace; }
 
@@ -634,15 +635,30 @@ namespace MultiMerge
             return workspaces;
         }
 
-        private static IEnumerable<string> GetMappedBranches(VersionControlServer vcs, string sourceBranch)
+        private static IEnumerable<string> GetMappedBranches(VersionControlServer vcs, List<Workspace> workspaces, string shelvedItem, ILogger logger)
         {
             // Branches of the same branch tree without a merge relationship with the source, such as a branch of a sibling,
             // are valid targets for a baseless unshelve
-            Dictionary<string, string> parents = vcs.QueryRootBranchObjects(RecursionType.Full)
-                .Where(b => !b.Properties.RootItem.IsDeleted)
-                .ToDictionary(b => b.Properties.RootItem.Item, b => b.Properties.ParentBranch?.Item, StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> parents;
+            try
+            {
+                parents = vcs.QueryRootBranchObjects(RecursionType.Full)
+                    .Where(b => !b.Properties.RootItem.IsDeleted)
+                    .ToDictionary(b => b.Properties.RootItem.Item, b => b.Properties.ParentBranch?.Item, StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception exception)
+            {
+                logger.Debug("Query branch objects exception: " + exception.Message);
+                return Enumerable.Empty<string>();
+            }
+            // The source branch is the deepest branch object that contains the shelved item
+            string sourceBranch = parents.Keys
+                .Where(path => shelvedItem.StartsWith(path + "/", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(path => path.Length)
+                .FirstOrDefault();
+            if (sourceBranch == null)
+                return Enumerable.Empty<string>();
             string sourceRoot = GetRootBranch(parents, sourceBranch);
-            List<Workspace> workspaces = GetLocalWorkspaces(vcs);
             return parents.Keys
                 .Where(path => string.Equals(GetRootBranch(parents, path), sourceRoot, StringComparison.OrdinalIgnoreCase))
                 .Where(path => workspaces.Any(w => w.IsServerPathMapped(path)))
@@ -657,12 +673,12 @@ namespace MultiMerge
             return branch;
         }
 
-        private static Workspace GetTargetWorkspace(VersionControlServer vcs, string targetBranch, string preferredWorkspaceName, ILogger logger)
+        private static Workspace GetTargetWorkspace(List<Workspace> workspaces, string targetBranch, List<string> targetItems, string preferredWorkspaceName, ILogger logger)
         {
-            // The workspace found from the source branch may not map the target branch, or may be one of several that do.
-            // The workspace selected in Source Control Explorer goes first, so the dialog proposes it.
-            List<Workspace> targetWorkspaces = GetLocalWorkspaces(vcs)
-                .Where(w => w.IsServerPathMapped(targetBranch))
+            // Several local workspaces may map the target items: the one selected in Source Control Explorer goes first,
+            // so the dialog proposes it
+            List<Workspace> targetWorkspaces = workspaces
+                .Where(w => targetItems.All(w.IsServerPathMapped))
                 .OrderBy(w => w.Name != preferredWorkspaceName)
                 .ToList();
             logger.Debug($"Workspaces mapping the target branch: {string.Join(", ", targetWorkspaces.Select(w => w.Name))}");
@@ -751,6 +767,11 @@ namespace MultiMerge
             {
                 this.Source = source;
                 this.Target = target;
+            }
+
+            public string MapToTarget(string serverItem)
+            {
+                return Target + serverItem.Substring(Source.Length);
             }
         }
 

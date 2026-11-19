@@ -42,7 +42,7 @@ namespace MultiMergeShared
                     if ((current.ServerItem).ToLowerInvariant().Contains(migrationRule.Source.ToLowerInvariant()))
                     {
                         current.SameBranch = true;
-                        current.ServerItem = (migrationRule.Target + (current.ServerItem).Substring((migrationRule.Source).Length));
+                        current.ServerItem = migrationRule.MapToTarget(current.ServerItem);
                     }
 
                     if (!workspace.IsServerPathMapped(current.ServerItem))
