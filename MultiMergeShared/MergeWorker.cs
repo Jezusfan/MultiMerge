@@ -583,6 +583,7 @@ namespace MultiMerge
                 logger.Debug($"Detected item with different path from source branch: {otherBranches.First().ServerItem}");
                 throw new Exception("Shelveset contains items from multiple branches. This is not supported!");
             }
+            targetBranches.AddRange(GetMappedBranches(vcs, fromBranch).Where(b => !targetBranches.Contains(b, StringComparer.OrdinalIgnoreCase)));
             var targetBranch = AskUserForTargetBranch(vcs, targetBranches, out var baseless);
             if (!string.IsNullOrEmpty(targetBranch))
             {
@@ -631,6 +632,29 @@ namespace MultiMerge
             }
             workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname));
             return workspaces;
+        }
+
+        private static IEnumerable<string> GetMappedBranches(VersionControlServer vcs, string sourceBranch)
+        {
+            // Branches of the same branch tree without a merge relationship with the source, such as a branch of a sibling,
+            // are valid targets for a baseless unshelve
+            Dictionary<string, string> parents = vcs.QueryRootBranchObjects(RecursionType.Full)
+                .Where(b => !b.Properties.RootItem.IsDeleted)
+                .ToDictionary(b => b.Properties.RootItem.Item, b => b.Properties.ParentBranch?.Item, StringComparer.OrdinalIgnoreCase);
+            string sourceRoot = GetRootBranch(parents, sourceBranch);
+            List<Workspace> workspaces = GetLocalWorkspaces(vcs);
+            return parents.Keys
+                .Where(path => string.Equals(GetRootBranch(parents, path), sourceRoot, StringComparison.OrdinalIgnoreCase))
+                .Where(path => workspaces.Any(w => w.IsServerPathMapped(path)))
+                .OrderBy(path => path);
+        }
+
+        private static string GetRootBranch(Dictionary<string, string> parents, string branch)
+        {
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            while (visited.Add(branch) && parents.TryGetValue(branch, out var parent) && parent != null)
+                branch = parent;
+            return branch;
         }
 
         private static Workspace GetTargetWorkspace(VersionControlServer vcs, string targetBranch, string preferredWorkspaceName, ILogger logger)
