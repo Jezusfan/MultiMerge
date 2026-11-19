@@ -566,7 +566,7 @@ namespace MultiMerge
             public bool MergeIntersectingFiles;
         }
 
-        public static string MergeShelveSet(Shelveset shelveset, ILogger logger)
+        public static string MergeShelveSet(Shelveset shelveset, ILogger logger, string preferredWorkspaceName)
         {
             VersionControlServer vcs = shelveset.VersionControlServer;
             var changes = vcs.QueryShelvedChanges(shelveset);
@@ -586,9 +586,12 @@ namespace MultiMerge
             var targetBranch = AskUserForTargetBranch(vcs, targetBranches, out var baseless);
             if (!string.IsNullOrEmpty(targetBranch))
             {
-                workspace = GetTargetWorkspace(vcs, targetBranch, logger);
+                workspace = GetTargetWorkspace(vcs, targetBranch, preferredWorkspaceName, logger);
                 if (workspace == null)
-                    throw new Exception($"Could not find a workspace that maps the target branch {targetBranch}!");
+                {
+                    logger.Debug("Cancel unshelve: user did not choose a target workspace");
+                    return null;
+                }
                 var queue = new UpdateLocalVersionQueue(workspace);
                 var shelveMerger = new ShelvesetWorker();
                 return shelveMerger.UnshelveMerge(shelveset.Name, shelveset.OwnerName, pending.ToArray(), new MigrationRule(fromBranch, targetBranch), workspace, logger, queue);
@@ -630,11 +633,17 @@ namespace MultiMerge
             return workspaces;
         }
 
-        private static Workspace GetTargetWorkspace(VersionControlServer vcs, string targetBranch, ILogger logger)
+        private static Workspace GetTargetWorkspace(VersionControlServer vcs, string targetBranch, string preferredWorkspaceName, ILogger logger)
         {
-            // The workspace found from the source branch may not map the target branch, or may be one of several that do
-            List<Workspace> targetWorkspaces = GetLocalWorkspaces(vcs).Where(w => w.IsServerPathMapped(targetBranch)).ToList();
+            // The workspace found from the source branch may not map the target branch, or may be one of several that do.
+            // The workspace selected in Source Control Explorer goes first, so the dialog proposes it.
+            List<Workspace> targetWorkspaces = GetLocalWorkspaces(vcs)
+                .Where(w => w.IsServerPathMapped(targetBranch))
+                .OrderBy(w => w.Name != preferredWorkspaceName)
+                .ToList();
             logger.Debug($"Workspaces mapping the target branch: {string.Join(", ", targetWorkspaces.Select(w => w.Name))}");
+            if (targetWorkspaces.Count == 0)
+                throw new Exception($"Could not find a workspace that maps the target branch {targetBranch}!");
             if (targetWorkspaces.Count > 1)
                 return AskUserForWorkspace(targetWorkspaces);
             return targetWorkspaces.FirstOrDefault();
