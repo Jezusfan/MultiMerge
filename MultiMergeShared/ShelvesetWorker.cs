@@ -46,7 +46,7 @@ namespace MultiMergeShared
                     }
 
                     if (!workspace.IsServerPathMapped(current.ServerItem))
-                        throw new Exception($"The target branch {migrationRule.Target} is out of date. Do a GetLatest and try again.");
+                        throw new Exception($"{current.ServerItem} is not mapped in workspace {workspace.Name}.");
                     if (!current.SameBranch)
                     {
                         if (dictionary1.ContainsKey((current.ShelvedChange).ItemId))

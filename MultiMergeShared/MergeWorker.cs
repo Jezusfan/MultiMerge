@@ -586,6 +586,9 @@ namespace MultiMerge
             var targetBranch = AskUserForTargetBranch(vcs, targetBranches, out var baseless);
             if (!string.IsNullOrEmpty(targetBranch))
             {
+                workspace = GetTargetWorkspace(vcs, targetBranch, logger);
+                if (workspace == null)
+                    throw new Exception($"Could not find a workspace that maps the target branch {targetBranch}!");
                 var queue = new UpdateLocalVersionQueue(workspace);
                 var shelveMerger = new ShelvesetWorker();
                 return shelveMerger.UnshelveMerge(shelveset.Name, shelveset.OwnerName, pending.ToArray(), new MigrationRule(fromBranch, targetBranch), workspace, logger, queue);
@@ -599,13 +602,7 @@ namespace MultiMerge
             IEnumerable<PendingChange> pendingEdits = changes.Where(p => p.IsEdit && !p.IsAdd && !p.IsDelete);
             if (pendingEdits.Any())
             {
-                List<Workspace> workspaces = new List<Workspace>();
-                string hostname = System.Net.Dns.GetHostName();
-                if (hostname.Length > 15)
-                {
-                    workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname.Substring(0, 15)));
-                }
-                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname));
+                List<Workspace> workspaces = GetLocalWorkspaces(vcs);
 
                 var workspace = GetBranches(vcs, workspaces, pendingEdits, logger, out fromBranch, out toBranches);
                 if (workspace != null) { return workspace; }
@@ -619,6 +616,28 @@ namespace MultiMerge
             fromBranch = null;
             toBranches = new List<string>();
             return null;
+        }
+
+        private static List<Workspace> GetLocalWorkspaces(VersionControlServer vcs)
+        {
+            List<Workspace> workspaces = new List<Workspace>();
+            string hostname = System.Net.Dns.GetHostName();
+            if (hostname.Length > 15)
+            {
+                workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname.Substring(0, 15)));
+            }
+            workspaces.AddRange(vcs.QueryWorkspaces(null, vcs.AuthorizedUser, hostname));
+            return workspaces;
+        }
+
+        private static Workspace GetTargetWorkspace(VersionControlServer vcs, string targetBranch, ILogger logger)
+        {
+            // The workspace found from the source branch may not map the target branch, or may be one of several that do
+            List<Workspace> targetWorkspaces = GetLocalWorkspaces(vcs).Where(w => w.IsServerPathMapped(targetBranch)).ToList();
+            logger.Debug($"Workspaces mapping the target branch: {string.Join(", ", targetWorkspaces.Select(w => w.Name))}");
+            if (targetWorkspaces.Count > 1)
+                return AskUserForWorkspace(targetWorkspaces);
+            return targetWorkspaces.FirstOrDefault();
         }
 
         private static Workspace GetBranches(VersionControlServer vcs, List<Workspace> workspaces, IEnumerable<PendingChange> pendingEdits, ILogger logger, out string fromBranch, out List<string> toBranches)
