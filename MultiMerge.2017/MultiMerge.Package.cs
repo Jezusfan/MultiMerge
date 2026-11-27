@@ -164,6 +164,9 @@ namespace MultiMerge
             {
                 var logger = new OutputWindowLogger(this);
                 var teamExplorer = GetService(typeof(ITeamExplorer)) as ITeamExplorer;
+                DTE2 automationObject = (DTE2)GetService(typeof(DTE));
+                VersionControlExt versionControlExt = automationObject?.GetObject("Microsoft.VisualStudio.TeamFoundation.VersionControl.VersionControlExt") as VersionControlExt;
+                string explorerWorkspaceName = versionControlExt?.Explorer?.Workspace?.Name;
                 //we have to work with private dynamics to get the private/internal properties...
                 var model = ((Microsoft.TeamFoundation.Controls.WPF.TeamExplorer.TeamExplorerPageBase)(teamExplorer).NavigateToPage(new Guid(TeamExplorerPageIds.FindShelvesets), (object)null)).Model.AsDynamic();
                 var list = model.Shelvesets;
@@ -182,7 +185,7 @@ namespace MultiMerge
                         {
                             try
                             {
-                                var message = MergeWorker.MergeShelveSet(shelveset, logger);
+                                var message = MergeWorker.MergeShelveSet(shelveset, logger, explorerWorkspaceName);
                                 if (!string.IsNullOrEmpty(message))
                                     MessageBox.Show(message);
                             }
