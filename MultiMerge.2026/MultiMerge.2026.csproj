@@ -189,7 +189,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.TeamFoundationServer.ExtendedClient" Version="20.256.2" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2139" GeneratePathProperty="true">
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.12.1606" GeneratePathProperty="true">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -205,8 +205,7 @@
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')" />
   <Import Project="$(PkgMicrosoft_VSSDK_BuildTools)\tools\VSSDK\Microsoft.VsSDK.targets" Condition="'$(PkgMicrosoft_VSSDK_BuildTools)' != '' And !Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')" />
   <Target Name="MultiMergeWarnTfShellHintPath" BeforeTargets="PrepareForBuild">
-    <Warning Condition="'$(MultiMergeTfShellFromHost)' != 'true'"
-             Text="MultiMerge.2026: Team Explorer TF assemblies not found under VSInstallRoot ('$(VSInstallRoot)'). Using '$(MSBuildThisFileDirectory)Assemblies'. Build from a Visual Studio Developer Command Prompt (or install Azure DevOps / TFVC workload) so shell DLL versions match your IDE." />
+    <Warning Condition="'$(MultiMergeTfShellFromHost)' != 'true'" Text="MultiMerge.2026: Team Explorer TF assemblies not found under VSInstallRoot ('$(VSInstallRoot)'). Using '$(MSBuildThisFileDirectory)Assemblies'. Build from a Visual Studio Developer Command Prompt (or install Azure DevOps / TFVC workload) so shell DLL versions match your IDE." />
   </Target>
   <Target Name="MultiMergeDedupeTfReferencePaths" AfterTargets="ResolveAssemblyReferences">
     <ItemGroup>
